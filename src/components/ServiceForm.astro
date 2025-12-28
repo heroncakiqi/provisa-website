@@ -1,0 +1,198 @@
+---
+export interface Props {
+  title: string;
+  description: string;
+  serviceType: 'bashkim-familjar' | 'usa' | 'uk';
+}
+
+const { title, description, serviceType } = Astro.props;
+
+const getServiceLabel = () => {
+  switch (serviceType) {
+    case 'bashkim-familjar':
+      return 'Bashkim Familjar – Zvicër';
+    case 'usa':
+      return 'Vizë USA';
+    case 'uk':
+      return 'Vizë UK';
+  }
+};
+---
+
+<div class="bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition">
+  <div class="mb-6">
+    <h3 class="text-2xl font-bold text-gray-900 mb-3">{title}</h3>
+    <p class="text-gray-600">{description}</p>
+  </div>
+
+  <form 
+    class="visa-form space-y-4" 
+    data-service={serviceType}
+    name={`contact-${serviceType}`}
+    method="POST"
+    data-netlify="true"
+    netlify-honeypot="bot-field"
+  >
+    <input type="hidden" name="form-name" value={`contact-${serviceType}`} />
+    <input type="hidden" name="service" value={getServiceLabel()} />
+    
+    <!-- Honeypot field for spam prevention -->
+    <div class="hidden" aria-hidden="true">
+      <label>Don't fill this out if you're human: <input name="bot-field" /></label>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label for={`emri-${serviceType}`} class="block text-sm font-medium text-gray-700 mb-1">
+          Emri <span class="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          id={`emri-${serviceType}`}
+          name="emri"
+          required
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          placeholder="Emri juaj"
+        />
+      </div>
+
+      <div>
+        <label for={`mbiemri-${serviceType}`} class="block text-sm font-medium text-gray-700 mb-1">
+          Mbiemri <span class="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          id={`mbiemri-${serviceType}`}
+          name="mbiemri"
+          required
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          placeholder="Mbiemri juaj"
+        />
+      </div>
+    </div>
+
+    <div>
+      <label for={`telefoni-${serviceType}`} class="block text-sm font-medium text-gray-700 mb-1">
+        Numri i telefonit <span class="text-red-500">*</span>
+      </label>
+      <input
+        type="tel"
+        id={`telefoni-${serviceType}`}
+        name="telefoni"
+        required
+        pattern="[0-9+\s-]+"
+        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+        placeholder="+383 XX XXX XXX"
+      />
+    </div>
+
+    <div>
+      <label for={`email-${serviceType}`} class="block text-sm font-medium text-gray-700 mb-1">
+        Email <span class="text-red-500">*</span>
+      </label>
+      <input
+        type="email"
+        id={`email-${serviceType}`}
+        name="email"
+        required
+        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+        placeholder="email@example.com"
+      />
+    </div>
+
+    {(serviceType === 'usa' || serviceType === 'uk') && (
+      <div>
+        <label for={`visa-type-${serviceType}`} class="block text-sm font-medium text-gray-700 mb-1">
+          Lloji i vizës <span class="text-red-500">*</span>
+        </label>
+        <select
+          id={`visa-type-${serviceType}`}
+          name="visa-type"
+          required
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+        >
+          <option value="">Zgjidhni llojin e vizës</option>
+          <option value="Turistike">Turistike</option>
+          <option value="Familjare">Familjare</option>
+          <option value="Biznesore">Biznesore</option>
+        </select>
+      </div>
+    )}
+
+    <div>
+      <label for={`mesazhi-${serviceType}`} class="block text-sm font-medium text-gray-700 mb-1">
+        Mesazhi (opsional)
+      </label>
+      <textarea
+        id={`mesazhi-${serviceType}`}
+        name="mesazhi"
+        rows="4"
+        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+        placeholder="Shkruani mesazhin tuaj këtu..."
+      ></textarea>
+    </div>
+
+    <button
+      type="submit"
+      class="w-full bg-primary-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-primary-700 transition focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+    >
+      Dërgo Kërkesën
+    </button>
+
+    <div class="form-message hidden mt-4 p-4 rounded-lg text-center font-medium"></div>
+  </form>
+</div>
+
+<script>
+  // Handle form submissions with Netlify
+  document.addEventListener('DOMContentLoaded', () => {
+    const forms = document.querySelectorAll('.visa-form');
+    
+    forms.forEach(form => {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formElement = e.target as HTMLFormElement;
+        const messageDiv = formElement.querySelector('.form-message') as HTMLElement;
+        const submitButton = formElement.querySelector('button[type="submit"]') as HTMLButtonElement;
+        
+        // Disable submit button
+        submitButton.disabled = true;
+        submitButton.textContent = 'Duke dërguar...';
+        
+        // Get form data
+        const formData = new FormData(formElement);
+        
+        try {
+          // Send to Netlify
+          const response = await fetch('/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams(formData as any).toString(),
+          });
+          
+          if (response.ok) {
+            messageDiv.className = 'form-message mt-4 p-4 rounded-lg text-center font-medium bg-green-100 text-green-800';
+            messageDiv.textContent = 'Kërkesa juaj u dërgua me sukses! Do t\'ju kontaktojmë së shpejti.';
+            messageDiv.classList.remove('hidden');
+            formElement.reset();
+          } else {
+            throw new Error('Failed to submit form');
+          }
+        } catch (error) {
+          messageDiv.className = 'form-message mt-4 p-4 rounded-lg text-center font-medium bg-red-100 text-red-800';
+          messageDiv.textContent = 'Ka ndodhur një gabim. Ju lutem provoni përsëri ose kontaktoni në WhatsApp.';
+          messageDiv.classList.remove('hidden');
+        } finally {
+          submitButton.disabled = false;
+          submitButton.textContent = 'Dërgo Kërkesën';
+          
+          // Hide message after 5 seconds
+          setTimeout(() => {
+            messageDiv.classList.add('hidden');
+          }, 5000);
+        }
+      });
+    });
+  });
+</script>
